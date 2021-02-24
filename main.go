@@ -168,6 +168,7 @@ func main() {
 	fmt.Println(balloon)
 
 	var figure string
+	// read flag -f (gopher is default)
 	flag.StringVar(&figure, "f", "gopher", "the figure name. Valid alternate values are `cow`, `cat`, and `random`")
 	flag.Parse()
 
