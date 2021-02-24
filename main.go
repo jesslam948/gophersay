@@ -9,7 +9,82 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
+	"unicode/utf8"
 )
+
+// this function takes a slice of strings of max width
+// prepends/appends margins on first & last line
+// 	and at start/end of each line
+// retuns string with contents of the balloon
+func buildBalloon(lines []string, maxwidth int) string {
+	var borders []string
+	count := len(lines)
+	var result []string
+
+	borders = []string{"/", "\\", "\\", "/", "|", "<", ">"}
+
+	top := " " + strings.Repeat("_", maxwidth+2)
+	bottom := " " + strings.Repeat("-", maxwidth+2)
+
+	result = append(result, top)
+
+	// creates borders around the text depending on certain rules
+	if count == 1 {
+		s := fmt.Sprintf("%s %s %s", borders[5], lines[0], borders[6])
+		result = append(result, s)
+	} else {
+		s := fmt.Sprintf(`%s %s %s`, borders[0], lines[0], borders[1])
+		result = append(result, s)
+		i := 1
+		for ; i < count-1; i++ {
+			s = fmt.Sprintf(`%s %s %s`, borders[4], lines[i], borders[4])
+			result = append(result, s)
+		}
+		s = fmt.Sprintf(`%s %s %s`, borders[2], lines[i], borders[3])
+		result = append(result, s)
+	}
+
+	result = append(result, bottom)
+	return strings.Join(result, "\n")
+}
+
+// this function convets all tabs to 4 spaces
+// this prevents formatting issues
+func tabsToSpaces(lines []string) []string {
+	var result []string
+	for _, l := range lines {
+		l = strings.Replace(l, "\t", "    ", -1)
+		result = append(result, l)
+	}
+	return result
+}
+
+// calculate max width given several strings
+func calculateMaxWidth(lines []string) int {
+	width := 0
+	for _, line := range lines {
+		// gets the length of the string
+		len := utf8.RuneCountInString(line)
+		// sets max width
+		if len > width {
+			width = len
+		}
+	}
+
+	return width
+}
+
+// makes all of the strings have the same number of spaces
+func normalizeStringsLength(lines []string, maxwidth int) []string {
+	var result []string
+	for _, line := range lines {
+		// appends spaces to the end of the string so all are length maxwidth
+		s := line + strings.Repeat(" ", maxwidth-utf8.RuneCountInString(line))
+		result = append(result, s)
+	}
+	return result
+}
 
 func main() {
 	info, err := os.Stdin.Stat()
@@ -18,24 +93,39 @@ func main() {
 		return
 	}
 
+	// checks to make sure input was piped in
 	if info.Mode()&os.ModeCharDevice != 0 {
 		fmt.Println("The command is intended to work with pipes.")
-		fmt.Println("Usage: fortne | gophersay")
+		fmt.Println("Usage: fortune | gophersay")
 		return
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	var output []rune
+	var lines []string
 
+	// reads each line
 	for {
-		input, _, err := reader.ReadRune()
+		line, _, err := reader.ReadLine()
 		if err != nil && err == io.EOF {
 			break
 		}
-		output = append(output, input)
+		lines = append(lines, string(line))
 	}
 
-	for j := 0; j < len(output); j++ {
-		fmt.Printf("%c", output[j])
-	}
+	// raw string with ascii cow
+	var cow = `         \  ^__^
+          \ (oo)\_______
+	    (__)\       )\/\
+	        ||----w |
+	        ||     ||
+		`
+
+	lines = tabsToSpaces(lines)
+	maxWidth := calculateMaxWidth(lines)
+	messages := normalizeStringsLength(lines, maxWidth)
+	balloon := buildBalloon(messages, maxWidth)
+
+	fmt.Println(balloon)
+	fmt.Println(cow)
+	fmt.Println()
 }
