@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -86,6 +87,53 @@ func normalizeStringsLength(lines []string, maxwidth int) []string {
 	return result
 }
 
+// given a figure name, print the figure
+func printFigure(name string) {
+
+	// raw strings with ascii figures
+	var cow = `         \  ^__^
+          \ (oo)\_______
+	    (__)\       )\/\
+	        ||----w |
+	        ||     ||
+		`
+
+	var cat = `   \
+      /-/\
+     ('-' )
+      |   \ /
+      U-U(_/
+  `
+
+	var gopher = `      \
+	  (\____/)
+	  /      \
+	(o ) __ ( o)
+ 	 |   UU   | 
+	<|        |>
+	 |        |
+	  \______/
+	   U    U
+`
+
+	var random = `      \
+	  ( )___( )
+	( O  -  O |
+	 |        |
+`
+
+	switch name {
+	case "gopher":
+		fmt.Println(gopher)
+	case "cow":
+		fmt.Println(cow)
+	case "cat":
+		fmt.Println(cat)
+	default:
+		fmt.Println(random)
+	}
+}
+
 func main() {
 	info, err := os.Stdin.Stat()
 	if err != nil {
@@ -112,20 +160,17 @@ func main() {
 		lines = append(lines, string(line))
 	}
 
-	// raw string with ascii cow
-	var cow = `         \  ^__^
-          \ (oo)\_______
-	    (__)\       )\/\
-	        ||----w |
-	        ||     ||
-		`
-
 	lines = tabsToSpaces(lines)
 	maxWidth := calculateMaxWidth(lines)
 	messages := normalizeStringsLength(lines, maxWidth)
 	balloon := buildBalloon(messages, maxWidth)
 
 	fmt.Println(balloon)
-	fmt.Println(cow)
+
+	var figure string
+	flag.StringVar(&figure, "f", "gopher", "the figure name. Valid alternate values are `cow`, `cat`, and `random`")
+	flag.Parse()
+
+	printFigure(figure)
 	fmt.Println()
 }
